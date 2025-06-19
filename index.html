@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>集体教研动态博弈模型可视化系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            accent: '#FF7D00',
+            neutral: '#F2F3F5',
+            'neutral-dark': '#4E5969',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            info: '#86909C'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .shadow-card {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      .bg-gradient-blue {
+        background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+      }
+      .text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+      }
+      .transition-all-300 {
+        transition: all 0.3s ease;
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="bg-primary text-white p-2 rounded-lg">
+          <i class="fa fa-line-chart text-xl"></i>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold text-primary">集体教研动态博弈模型可视化系统</h1>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <button id="help-btn" class="text-neutral-dark hover:text-primary transition-all-300">
+          <i class="fa fa-question-circle mr-1"></i> 帮助
+        </button>
+        <button id="about-btn" class="text-neutral-dark hover:text-primary transition-all-300">
+          <i class="fa fa-info-circle mr-1"></i> 关于
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="container mx-auto px-4 py-6">
+    <!-- 系统概述 -->
+    <section class="mb-8 bg-white rounded-xl shadow-card p-6">
+      <h2 class="text-2xl font-bold mb-4 text-gradient">系统概述</h2>
+      <p class="text-gray-600 leading-relaxed">
+        本系统基于博弈论原理，构建了一个集体教研环境下多方参与者的动态博弈模型。系统通过参数化设置，分析教师、管理者、教研员和工作室在不同策略选择下的收益情况，帮助教育管理者优化教研管理决策。
+      </p>
+    </section>
+
+    <!-- 主要内容布局 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左侧区域 - 参与方收益分析 (两列) -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- 教师收益分析 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-primary flex items-center">
+              <i class="fa fa-user-circle mr-2"></i>教师收益分析
+            </h3>
+            <div class="text-sm text-gray-500">
+              <span id="teacher-cooperate-value" class="font-semibold">0.5</span> 合作 vs 
+              <span id="teacher-free-ride-value" class="font-semibold">0.5</span> 搭便车
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <canvas id="teacher-payoff-chart" height="200"></canvas>
+            </div>
+            <div class="flex flex-col justify-center">
+              <div class="mb-4">
+                <h4 class="font-semibold mb-2">合作收益</h4>
+                <div class="bg-blue-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">资源转化收益: <span id="teacher-resource-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">参与成本: <span id="teacher-cost-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="teacher-net-cooperate-value" class="font-semibold text-primary">0.00</span></p>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">搭便车收益</h4>
+                <div class="bg-orange-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">机会主义收益: <span id="teacher-opportunity-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">惩罚成本: <span id="teacher-punish-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="teacher-net-free-ride-value" class="font-semibold text-warning">0.00</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 管理者收益分析 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-primary flex items-center">
+              <i class="fa fa-users mr-2"></i>管理者收益分析
+            </h3>
+            <div class="text-sm text-gray-500">
+              <span id="manager-effective-value" class="font-semibold">0.5</span> 有效监督 vs 
+              <span id="manager-formal-value" class="font-semibold">0.5</span> 形式监督
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <canvas id="manager-payoff-chart" height="200"></canvas>
+            </div>
+            <div class="flex flex-col justify-center">
+              <div class="mb-4">
+                <h4 class="font-semibold mb-2">有效监督收益</h4>
+                <div class="bg-green-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">教研质量提升: <span id="manager-quality-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">监督成本: <span id="manager-cost-effective-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="manager-net-effective-value" class="font-semibold text-success">0.00</span></p>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">形式监督收益</h4>
+                <div class="bg-red-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">行政收益: <span id="manager-administrative-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">潜在风险: <span id="manager-risk-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="manager-net-formal-value" class="font-semibold text-danger">0.00</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 教研员收益分析 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-primary flex items-center">
+              <i class="fa fa-book mr-2"></i>教研员收益分析
+            </h3>
+            <div class="text-sm text-gray-500">
+              <span id="researcher-legal-value" class="font-semibold">0.5</span> 合法收益 vs 
+              <span id="researcher-rent-value" class="font-semibold">0.5</span> 寻租收益
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <canvas id="researcher-payoff-chart" height="200"></canvas>
+            </div>
+            <div class="flex flex-col justify-center">
+              <div class="mb-4">
+                <h4 class="font-semibold mb-2">合法收益</h4>
+                <div class="bg-purple-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">专业发展收益: <span id="researcher-professional-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">时间成本: <span id="researcher-time-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="researcher-net-legal-value" class="font-semibold text-purple-600">0.00</span></p>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">寻租收益</h4>
+                <div class="bg-pink-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">短期利益: <span id="researcher-short-term-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">道德风险: <span id="researcher-ethics-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="researcher-net-rent-value" class="font-semibold text-pink-600">0.00</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 工作室收益分析 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-primary flex items-center">
+              <i class="fa fa-building mr-2"></i>工作室收益分析
+            </h3>
+            <div class="text-sm text-gray-500">
+              <span id="studio-academic-value" class="font-semibold">0.5</span> 学术型 vs 
+              <span id="studio-administrative-value" class="font-semibold">0.5</span> 行政型
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <canvas id="studio-payoff-chart" height="200"></canvas>
+            </div>
+            <div class="flex flex-col justify-center">
+              <div class="mb-4">
+                <h4 class="font-semibold mb-2">学术型收益</h4>
+                <div class="bg-indigo-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">学术成果收益: <span id="studio-academic-result-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">资源投入: <span id="studio-resource-invest-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="studio-net-academic-value" class="font-semibold text-indigo-600">0.00</span></p>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">行政型收益</h4>
+                <div class="bg-teal-50 p-3 rounded-lg">
+                  <p class="text-sm text-gray-600 mb-1">行政支持收益: <span id="studio-administrative-support-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600 mb-1">学术机会成本: <span id="studio-academic-opportunity-value" class="font-semibold">0.00</span></p>
+                  <p class="text-sm text-gray-600">净收益: <span id="studio-net-administrative-value" class="font-semibold text-teal-600">0.00</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 系统仿真控制 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+            <i class="fa fa-play-circle mr-2"></i>系统动态仿真
+          </h3>
+
+          <div class="space-y-4">
+            <!-- 仿真速度与步数设置 -->
+            <div class="flex items-center justify-between flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+              <div class="flex-1">
+                <label for="simulation-speed" class="block text-sm font-medium text-gray-700 mb-1">仿真速度</label>
+                <div class="flex items-center">
+                  <input type="range" id="simulation-speed" min="1" max="10" step="1" value="5"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                  <span id="simulation-speed-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">5</span>
+                </div>
+              </div>
+
+              <div class="flex-1 sm:max-w-[160px]">
+                <label for="simulation-steps" class="block text-sm font-medium text-gray-700 mb-1">仿真步数</label>
+                <input type="number" id="simulation-steps" min="1" max="1000" value="50"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm">
+              </div>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <button id="start-simulation" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all-300 flex items-center justify-center">
+                <i class="fa fa-play mr-2"></i>开始仿真
+              </button>
+              <button id="pause-simulation" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all-300 flex items-center justify-center" disabled>
+                <i class="fa fa-pause mr-2"></i>暂停
+              </button>
+              <button id="reset-simulation" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all-300 flex items-center justify-center">
+                <i class="fa fa-refresh mr-2"></i>重置
+              </button>
+            </div>
+
+            <!-- 仿真状态 与 系统演化趋势并排 -->
+            <div class="flex flex-col lg:flex-row lg:space-x-4 space-y-4 lg:space-y-0">
+              <!-- 仿真状态 -->
+              <div class="bg-gray-50 p-4 rounded-lg w-full lg:w-[200px] max-w-full">
+                <div class="flex justify-between items-center mb-3">
+                  <h4 class="font-semibold text-gray-700">仿真状态</h4>
+                  <span id="simulation-status" class="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600">就绪</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p class="text-gray-500">当前步数:</p>
+                    <p id="current-step" class="font-medium">0</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">总步数:</p>
+                    <p id="total-steps" class="font-medium">50</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">教师参与度:</p>
+                    <p id="simulation-participation" class="font-medium">0.50</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">监督强度:</p>
+                    <p id="simulation-supervision" class="font-medium">0.50</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">寻租强度:</p>
+                    <p id="simulation-rent-seeking" class="font-medium">0.50</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">学术型比例:</p>
+                    <p id="simulation-academic-ratio" class="font-medium">0.50</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 系统演化趋势 -->
+              <div class="flex-1">
+                <h4 class="font-semibold text-gray-700 mb-2">系统演化趋势</h4>
+                <canvas id="system-evolution-chart" height="120" class="rounded-lg bg-white shadow-inner"></canvas>
+              </div>
+            </div>
+
+            <!-- 仿真结论 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-2">仿真结论</h4>
+              <p id="simulation-conclusion" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg min-h-[60px]">
+                请运行仿真以查看结论。
+              </p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 右侧区域 - 模型参数设置 (单列) -->
+      <div class="lg:col-span-1 flex flex-col h-full">
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+            <i class="fa fa-sliders mr-2"></i>模型参数设置
+          </h3>
+          
+          <div class="space-y-6">
+            <!-- 教师相关参数 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fa fa-user-circle text-primary mr-2"></i>教师参数
+              </h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="lambda" class="block text-sm font-medium text-gray-700 mb-1">资源转化系数 (λ)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="lambda" min="0" max="1" step="0.01" value="0.6" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="lambda-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.60</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="d0" class="block text-sm font-medium text-gray-700 mb-1">基础参与成本 (d₀)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="d0" min="0" max="1" step="0.01" value="0.3" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="d0-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.30</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="blockchain" class="block text-sm font-medium text-gray-700 mb-1">区块链应用</label>
+                  <div class="flex items-center">
+                    <input type="checkbox" id="blockchain" class="rounded text-primary focus:ring-primary h-4 w-4">
+                    <span class="ml-2 text-sm text-gray-600">启用区块链降低机会成本</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="k" class="block text-sm font-medium text-gray-700 mb-1">搭便车惩罚系数 (k)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="k" min="0" max="1" step="0.01" value="0.4" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="k-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.40</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 管理者相关参数 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fa fa-users text-primary mr-2"></i>管理者参数
+              </h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="alpha" class="block text-sm font-medium text-gray-700 mb-1">教研质量权重 (α)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.6" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="alpha-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.60</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="beta" class="block text-sm font-medium text-gray-700 mb-1">行政成果权重 (β)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="beta" min="0" max="1" step="0.01" value="0.4" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="beta-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.40</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="a" class="block text-sm font-medium text-gray-700 mb-1">监督成本系数 (a)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="a" min="0" max="1" step="0.01" value="0.3" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="a-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.30</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="b" class="block text-sm font-medium text-gray-700 mb-1">监督强度成本系数 (b)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="b" min="0" max="1" step="0.01" value="0.2" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="b-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.20</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 教研员相关参数 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fa fa-book text-primary mr-2"></i>教研员参数
+              </h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="rho" class="block text-sm font-medium text-gray-700 mb-1">合法收益偏好 (ρ)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="rho" min="0" max="1" step="0.01" value="0.5" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="rho-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.50</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="m" class="block text-sm font-medium text-gray-700 mb-1">寻租收益系数 (m)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="m" min="0" max="2" step="0.01" value="1.0" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="m-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">1.00</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="sigma" class="block text-sm font-medium text-gray-700 mb-1">监督威慑系数 (σ)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="sigma" min="0" max="1" step="0.01" value="0.5" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="sigma-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 工作室相关参数 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fa fa-building text-primary mr-2"></i>工作室参数
+              </h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="gamma" class="block text-sm font-medium text-gray-700 mb-1">学术收益权重 (γ)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="gamma" min="0" max="1" step="0.01" value="0.5" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="gamma-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.50</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="rThres" class="block text-sm font-medium text-gray-700 mb-1">学术门槛 (r)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="rThres" min="0" max="1" step="0.01" value="0.6" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="rThres-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.60</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="mu" class="block text-sm font-medium text-gray-700 mb-1">学术型额外收益 (μ)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="mu" min="0" max="1" step="0.01" value="0.3" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="mu-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.30</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 系统相关参数 -->
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fa fa-cogs text-primary mr-2"></i>系统参数
+              </h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="resource" class="block text-sm font-medium text-gray-700 mb-1">资源总量 (R)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="resource" min="0" max="2" step="0.01" value="1.0" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="resource-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">1.00</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="quality" class="block text-sm font-medium text-gray-700 mb-1">教研质量 (Q)</label>
+                  <div class="flex items-center">
+                    <input type="range" id="quality" min="0" max="1" step="0.01" value="0.7" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    <span id="quality-value" class="ml-2 min-w-[40px] text-right text-sm font-medium">0.70</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-6 pt-4 border-t border-gray-200">
+            <button id="reset-parameters" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all-300 flex items-center justify-center">
+              <i class="fa fa-refresh mr-2"></i>重置所有参数
+            </button>
+          </div>
+        </section>
+        
+        <!-- 纳什均衡分析 -->
+        <section class="bg-white rounded-xl shadow-card p-6 mt-auto">
+          <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+            <i class="fa fa-balance-scale mr-2"></i>纳什均衡分析
+          </h3>
+          
+          <div class="space-y-4">
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-2">教师参与度 vs 监督强度</h4>
+              <canvas id="nash-equilibrium-1" height="200"></canvas>
+              <p class="text-sm text-gray-600 mt-2">
+                <span class="font-medium">当前均衡点:</span> 
+                <span id="nash-point-1">参与度 = 0.5, 监督强度 = 0.5</span>
+              </p>
+            </div>
+            
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-2">寻租强度 vs 学术型比例</h4>
+              <canvas id="nash-equilibrium-2" height="200"></canvas>
+              <p class="text-sm text-gray-600 mt-2">
+                <span class="font-medium">当前均衡点:</span> 
+                <span id="nash-point-2">寻租强度 = 0.5, 学术型比例 = 0.5</span>
+              </p>
+            </div>
+          </div>
+        </section>
+        
+  
+      </div>
+    </div>
+    
+    <!-- 政策建议区域 -->
+    <section class="mt-8 bg-white rounded-xl shadow-card p-6">
+      <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+        <i class="fa fa-lightbulb-o mr-2"></i>政策建议
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-primary">
+          <h4 class="font-semibold text-primary mb-2">教师激励政策</h4>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+              <span>提高资源转化系数(λ)，增强教师合作收益感知</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+              <span>降低基础参与成本(d₀)，提供更多教研支持</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+              <span>引入区块链技术，降低教师机会主义行为收益</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+              <span>加大对搭便车行为的惩罚力度(k)</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="bg-green-50 p-4 rounded-lg border-l-4 border-success">
+          <h4 class="font-semibold text-success mb-2">管理优化策略</h4>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>提高教研质量权重(α)，降低行政成果权重(β)</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>优化监督机制，降低监督成本系数(a)</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>建立合理的监督强度，平衡成本与收益</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>完善教研质量评估体系，提高教研质量(Q)</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-600">
+          <h4 class="font-semibold text-purple-600 mb-2">系统生态建设</h4>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-purple-600 mt-1 mr-2"></i>
+              <span>提高合法收益偏好(ρ)，引导教研员专业发展</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-purple-600 mt-1 mr-2"></i>
+              <span>降低寻租收益系数(m)，减少非正当竞争</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-purple-600 mt-1 mr-2"></i>
+              <span>增强监督威慑系数(σ)，抑制寻租行为</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-purple-600 mt-1 mr-2"></i>
+              <span>提高学术型额外收益(μ)，促进学术型工作室发展</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-gray-200 mt-10">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="text-gray-600 text-sm mb-4 md:mb-0">
+          © 2025 集体教研动态博弈模型可视化系统 | 教育决策支持工具
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-500 hover:text-primary transition-all-300">
+            <i class="fa fa-github text-xl"></i>
+          </a>
+          <a href="#" class="text-gray-500 hover:text-primary transition-all-300">
+            <i class="fa fa-twitter text-xl"></i>
+          </a>
+          <a href="#" class="text-gray-500 hover:text-primary transition-all-300">
+            <i class="fa fa-linkedin text-xl"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 模态框：帮助 -->
+  <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-primary">使用帮助</h3>
+          <button id="close-help-modal" class="text-gray-400 hover:text-gray-500">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <h4 class="font-semibold text-lg mb-2">系统概述</h4>
+            <p class="text-gray-600">
+              本系统基于博弈论原理，构建了集体教研环境下多方参与者的动态博弈模型。通过调整模型参数，用户可以分析不同策略选择下各参与方的收益情况，探索系统的纳什均衡点，并进行动态仿真以观察系统演化趋势。
+            </p>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">参与方收益分析</h4>
+            <p class="text-gray-600">
+              系统分析了四类参与方（教师、管理者、教研员和工作室）在不同策略下的收益情况：
+            </p>
+            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+              <li>教师：合作与搭便车策略的收益对比</li>
+              <li>管理者：有效监督与形式监督策略的收益对比</li>
+              <li>教研员：合法收益与寻租收益策略的收益对比</li>
+              <li>工作室：学术型与行政型策略的收益对比</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">模型参数设置</h4>
+            <p class="text-gray-600">
+              用户可以通过右侧参数设置面板调整各类模型参数，包括：
+            </p>
+            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+              <li>教师参数：资源转化系数、参与成本等</li>
+              <li>管理者参数：教研质量权重、监督成本等</li>
+              <li>教研员参数：合法收益偏好、寻租收益系数等</li>
+              <li>工作室参数：学术收益权重、学术门槛等</li>
+              <li>系统参数：资源总量、教研质量等</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">纳什均衡分析</h4>
+            <p class="text-gray-600">
+              系统分析了教师参与度与监督强度、寻租强度与学术型比例之间的纳什均衡点，帮助用户理解系统的稳定状态。
+            </p>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">系统动态仿真</h4>
+            <p class="text-gray-600">
+              用户可以通过系统动态仿真功能观察系统随时间的演化趋势：
+            </p>
+            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+              <li>设置仿真速度和总步数</li>
+              <li>开始、暂停或重置仿真过程</li>
+              <li>观察教师参与度、监督强度等指标的变化趋势</li>
+              <li>根据仿真结果获取政策建议</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 border-t border-gray-200">
+        <button id="close-help-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all-300">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框：关于 -->
+  <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-primary">关于系统</h3>
+          <button id="close-about-modal" class="text-gray-400 hover:text-gray-500">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <h4 class="font-semibold text-lg mb-2">系统简介</h4>
+            <p class="text-gray-600">
+              集体教研动态博弈模型可视化系统是一个基于博弈论原理开发的教育决策支持工具。系统通过构建多方参与者的动态博弈模型，帮助教育管理者理解集体教研环境中各方的行为动机和策略选择，优化教研管理决策。
+            </p>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">理论基础</h4>
+            <p class="text-gray-600">
+              本系统基于非合作博弈理论，特别是演化博弈理论，构建了教师、管理者、教研员和工作室之间的多方博弈模型。系统考虑了各方的策略选择、收益函数以及策略演化过程，通过可视化的方式呈现复杂的博弈关系和系统演化趋势。
+            </p>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">使用场景</h4>
+            <ul class="list-disc pl-5 text-gray-600 space-y-1">
+              <li>教育政策制定者分析教研管理政策效果</li>
+              <li>学校管理者优化教研资源配置</li>
+              <li>教育研究者进行教研行为建模与分析</li>
+              <li>师范院校师生学习教育管理中的博弈理论应用</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold text-lg mb-2">版本信息</h4>
+            <p class="text-gray-600">
+              当前版本: v1.0.0
+            </p>
+            <p class="text-gray-600">
+              发布日期: 2025年6月
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 border-t border-gray-200">
+        <button id="close-about-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all-300">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模型参数
+    const params = {
+      lambda: 0.6,      // 教师资源转化系数
+      d0: 0.3,         // 教师基础参与成本
+      blockchain: false, // 是否使用区块链
+      k: 0.4,          // 搭便车惩罚系数
+      alpha: 0.6,      // 管理者教研质量权重
+      beta: 0.4,       // 管理者行政成果权重
+      a: 0.3,          // 管理者监督成本系数
+      b: 0.2,          // 管理者监督强度成本系数
+      rho: 0.5,        // 教研员合法收益偏好
+      m: 1.0,          // 教研员寻租收益系数
+      sigma: 0.5,      // 教研员监督威慑系数
+      gamma: 0.5,      // 工作室学术收益权重
+      rThres: 0.6,     // 工作室学术门槛
+      mu: 0.3,         // 工作室学术型额外收益
+      resource: 1.0,   // 资源总量
+      quality: 0.7     // 教研质量
+    };
+    
+    // 系统状态
+    const systemState = {
+      participation: 0.5,   // 教师参与度
+      supervision: 0.5,     // 管理者监督强度
+      rentSeeking: 0.5,     // 教研员寻租强度
+      academicRatio: 0.5    // 工作室学术型比例
+    };
+    
+    // 仿真数据
+    const simulationData = {
+      isRunning: false,
+      history: [],
+      currentStep: 0,
+      totalSteps: 50,
+      intervalId: null,
+      speed: 5 // 1-10
+    };
+    
+    // 图表实例
+    let teacherChart, managerChart, researcherChart, studioChart;
+    let nashChart1, nashChart2, evolutionChart;
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化滑块和输入框
+      initSlidersAndInputs();
+      
+      // 初始化图表
+      initCharts();
+      
+      // 更新所有图表
+      updateAllCharts();
+      
+      // 初始化仿真数据
+      initSimulationData();
+      
+      // 绑定按钮事件
+      bindButtonEvents();
+      
+      // 绑定模态框事件
+      bindModalEvents();
+    });
+    
+    // 初始化滑块和输入框
+    function initSlidersAndInputs() {
+      // 初始化滑块值
+      Object.keys(params).forEach(param => {
+        const element = document.getElementById(param);
+        if (element) {
+          if (element.type === 'range') {
+            element.value = params[param];
+            document.getElementById(`${param}-value`).textContent = params[param].toFixed(2);
+          } else if (element.type === 'checkbox') {
+            element.checked = params[param];
+          }
+        }
+      });
+      
+      // 绑定滑块事件
+      Object.keys(params).forEach(param => {
+        const element = document.getElementById(param);
+        if (element && element.type === 'range') {
+          element.addEventListener('input', function() {
+            params[param] = parseFloat(this.value);
+            document.getElementById(`${param}-value`).textContent = params[param].toFixed(2);
+            updateAllCharts();
+          });
+        } else if (element && element.type === 'checkbox') {
+          element.addEventListener('change', function() {
+            params[param] = this.checked;
+            updateAllCharts();
+          });
+        }
+      });
+      
+      // 仿真速度滑块
+      const speedSlider = document.getElementById('simulation-speed');
+      speedSlider.addEventListener('input', function() {
+        simulationData.speed = parseInt(this.value);
+        document.getElementById('simulation-speed-value').textContent = simulationData.speed;
+        
+        // 如果正在运行，调整速度
+        if (simulationData.isRunning) {
+          clearInterval(simulationData.intervalId);
+          startSimulation();
+        }
+      });
+      
+      // 仿真步数输入
+      const stepsInput = document.getElementById('simulation-steps');
+      stepsInput.addEventListener('change', function() {
+        simulationData.totalSteps = parseInt(this.value);
+        document.getElementById('total-steps').textContent = simulationData.totalSteps;
+      });
+    }
+    
+    // 初始化图表
+    function initCharts() {
+      // 教师收益图表
+      teacherChart = new Chart(document.getElementById('teacher-payoff-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['合作', '搭便车'],
+          datasets: [{
+            label: '收益',
+            data: [0, 0],
+            backgroundColor: ['rgba(22, 93, 255, 0.7)', 'rgba(255, 125, 0, 0.7)'],
+            borderColor: ['rgba(22, 93, 255, 1)', 'rgba(255, 125, 0, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `收益: ${context.raw.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '收益'
+              }
+            }
+          }
+        }
+      });
+      
+      // 管理者收益图表
+      managerChart = new Chart(document.getElementById('manager-payoff-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['有效监督', '形式监督'],
+          datasets: [{
+            label: '收益',
+            data: [0, 0],
+            backgroundColor: ['rgba(0, 180, 42, 0.7)', 'rgba(245, 63, 63, 0.7)'],
+            borderColor: ['rgba(0, 180, 42, 1)', 'rgba(245, 63, 63, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `收益: ${context.raw.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '收益'
+              }
+            }
+          }
+        }
+      });
+      
+      // 教研员收益图表
+      researcherChart = new Chart(document.getElementById('researcher-payoff-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['合法收益', '寻租收益'],
+          datasets: [{
+            label: '收益',
+            data: [0, 0],
+            backgroundColor: ['rgba(147, 51, 234, 0.7)', 'rgba(236, 72, 153, 0.7)'],
+            borderColor: ['rgba(147, 51, 234, 1)', 'rgba(236, 72, 153, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `收益: ${context.raw.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '收益'
+              }
+            }
+          }
+        }
+      });
+      
+      // 工作室收益图表
+      studioChart = new Chart(document.getElementById('studio-payoff-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['学术型', '行政型'],
+          datasets: [{
+            label: '收益',
+            data: [0, 0],
+            backgroundColor: ['rgba(99, 102, 241, 0.7)', 'rgba(20, 184, 166, 0.7)'],
+            borderColor: ['rgba(99, 102, 241, 1)', 'rgba(20, 184, 166, 1)'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `收益: ${context.raw.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '收益'
+              }
+            }
+          }
+        }
+      });
+      
+      // 纳什均衡图表1
+      nashChart1 = new Chart(document.getElementById('nash-equilibrium-1'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: '收益等值线',
+            data: calculateNashData1(),
+            backgroundColor: 'rgba(22, 93, 255, 0.3)',
+            pointRadius: 2
+          }, {
+            label: '当前状态',
+            data: [{
+              x: systemState.participation,
+              y: systemState.supervision
+            }],
+            backgroundColor: 'rgba(255, 125, 0, 1)',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: '教师参与度'
+              },
+              min: 0,
+              max: 1
+            },
+            y: {
+              title: {
+                display: true,
+                text: '监督强度'
+              },
+              min: 0,
+              max: 1
+            }
+          }
+        }
+      });
+      
+      // 纳什均衡图表2
+      nashChart2 = new Chart(document.getElementById('nash-equilibrium-2'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: '收益等值线',
+            data: calculateNashData2(),
+            backgroundColor: 'rgba(147, 51, 234, 0.3)',
+            pointRadius: 2
+          }, {
+            label: '当前状态',
+            data: [{
+              x: systemState.rentSeeking,
+              y: systemState.academicRatio
+            }],
+            backgroundColor: 'rgba(255, 125, 0, 1)',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: '寻租强度'
+              },
+              min: 0,
+              max: 1
+            },
+            y: {
+              title: {
+                display: true,
+                text: '学术型比例'
+              },
+              min: 0,
+              max: 1
+            }
+          }
+        }
+      });
+      
+      // 系统演化图表
+      evolutionChart = new Chart(document.getElementById('system-evolution-chart'), {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: '教师参与度',
+              data: [],
+              borderColor: 'rgba(22, 93, 255, 1)',
+              backgroundColor: 'rgba(22, 93, 255, 0.1)',
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: '监督强度',
+              data: [],
+              borderColor: 'rgba(0, 180, 42, 1)',
+              backgroundColor: 'rgba(0, 180, 42, 0.1)',
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: '寻租强度',
+              data: [],
+              borderColor: 'rgba(255, 125, 0, 1)',
+              backgroundColor: 'rgba(255, 125, 0, 0.1)',
+              tension: 0.3,
+              fill: false
+            },
+            {
+              label: '学术型比例',
+              data: [],
+              borderColor: 'rgba(147, 51, 234, 1)',
+              backgroundColor: 'rgba(147, 51, 234, 0.1)',
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: '仿真步数'
+              }
+            },
+            y: {
+              min: 0,
+              max: 1,
+              title: {
+                display: true,
+                text: '比例'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // 计算教师收益
+    function calculateTeacherPayoff(cooperate, participation) {
+      const theta = cooperate ? 1 : 0;
+      const baseOpportunityCost = params.blockchain ? 0.1 : 0.3;
+      const opportunityCost = baseOpportunityCost * (1 - params.lambda);
+      
+      if (cooperate) {
+        const resourcePayoff = params.lambda * params.resource * params.quality * participation * theta;
+        const cost = theta * (params.d0 + opportunityCost);
+        const netPayoff = resourcePayoff - cost;
+        
+        // 更新UI显示
+        document.getElementById('teacher-resource-value').textContent = resourcePayoff.toFixed(4);
+        document.getElementById('teacher-cost-value').textContent = cost.toFixed(4);
+        document.getElementById('teacher-net-cooperate-value').textContent = netPayoff.toFixed(4);
+        
+        return netPayoff;
+      } else {
+        const opportunityPayoff = params.resource * params.quality * participation * (1 - params.k * theta);
+        const punishCost = params.k * theta * params.resource * params.quality * participation;
+        const netPayoff = opportunityPayoff - punishCost;
+        
+        // 更新UI显示
+        document.getElementById('teacher-opportunity-value').textContent = opportunityPayoff.toFixed(4);
+        document.getElementById('teacher-punish-value').textContent = punishCost.toFixed(4);
+        document.getElementById('teacher-net-free-ride-value').textContent = netPayoff.toFixed(4);
+        
+        return netPayoff;
+      }
+    }
+    
+    // 计算管理者收益
+    function calculateManagerPayoff(supervision, participation) {
+      const effectivePayoff = params.alpha * (0.5 + 0.5 * participation) + 0.1 * (1 + 0.5 * supervision) - params.a * supervision - params.b * supervision * supervision;
+      const formalPayoff = params.beta * (1 - participation) + 0.1 * (1 + 0.5 * supervision);
+      
+      // 更新UI显示
+      document.getElementById('manager-quality-value').textContent = (params.alpha * (0.5 + 0.5 * participation)).toFixed(4);
+      document.getElementById('manager-cost-effective-value').textContent = (params.a * supervision + params.b * supervision * supervision).toFixed(4);
+      document.getElementById('manager-net-effective-value').textContent = effectivePayoff.toFixed(4);
+      
+      document.getElementById('manager-administrative-value').textContent = (params.beta * (1 - participation)).toFixed(4);
+      document.getElementById('manager-risk-value').textContent = '0.0000'; // 简化模型中没有明确的风险成本
+      document.getElementById('manager-net-formal-value').textContent = formalPayoff.toFixed(4);
+      
+      return { effectivePayoff, formalPayoff };
+    }
+    
+    // 计算教研员收益
+    function calculateResearcherPayoff(rentSeeking, participation, supervision) {
+      const legalPayoff = params.rho * (0.5 + 0.5 * participation);
+      const rentSeekingPayoff = (1 - params.rho) * params.m * rentSeeking * (1 - rentSeeking) - params.sigma * rentSeeking * rentSeeking * supervision;
+      
+      // 更新UI显示
+      document.getElementById('researcher-professional-value').textContent = (params.rho * (0.5 + 0.5 * participation)).toFixed(4);
+      document.getElementById('researcher-time-value').textContent = '0.0000'; // 简化模型中没有明确的时间成本
+      document.getElementById('researcher-net-legal-value').textContent = legalPayoff.toFixed(4);
+      
+      document.getElementById('researcher-short-term-value').textContent = ((1 - params.rho) * params.m * rentSeeking * (1 - rentSeeking)).toFixed(4);
+      document.getElementById('researcher-ethics-value').textContent = (params.sigma * rentSeeking * rentSeeking * supervision).toFixed(4);
+      document.getElementById('researcher-net-rent-value').textContent = rentSeekingPayoff.toFixed(4);
+      
+      return { legalPayoff, rentSeekingPayoff };
+    }
+    
+    // 计算工作室收益
+    function calculateStudioPayoff(academicRatio, participation, resource) {
+      const academicPayoff = params.gamma * resource * participation - 0.2 * resource + params.mu * academicRatio;
+      const adminPayoff = (1 - params.gamma) * resource + (1 - academicRatio) - 0.1 * resource * (1 - academicRatio);
+      
+      // 更新UI显示
+      document.getElementById('studio-academic-result-value').textContent = (params.gamma * resource * participation).toFixed(4);
+      document.getElementById('studio-resource-invest-value').textContent = (0.2 * resource).toFixed(4);
+      document.getElementById('studio-net-academic-value').textContent = academicPayoff.toFixed(4);
+      
+      document.getElementById('studio-administrative-support-value').textContent = ((1 - params.gamma) * resource).toFixed(4);
+      document.getElementById('studio-academic-opportunity-value').textContent = (0.1 * resource * (1 - academicRatio)).toFixed(4);
+      document.getElementById('studio-net-administrative-value').textContent = adminPayoff.toFixed(4);
+      
+      return { academicPayoff, adminPayoff };
+    }
+    
+    // 计算纳什均衡数据1（教师参与度 vs 监督强度）
+    function calculateNashData1() {
+      const data = [];
+      for (let p = 0; p <= 1; p += 0.05) {
+        for (let s = 0; s <= 1; s += 0.05) {
+          // 计算合作与搭便车收益差
+          const cooperatePayoff = calculateTeacherPayoff(true, p);
+          const freeRidePayoff = calculateTeacherPayoff(false, p);
+          const teacherDiff = cooperatePayoff - freeRidePayoff;
+          
+          // 计算有效监督与形式监督收益差
+          const managerPayoffs = calculateManagerPayoff(s, p);
+          const managerDiff = managerPayoffs.effectivePayoff - managerPayoffs.formalPayoff;
+          
+          // 当两者收益差接近0时，认为是均衡点附近
+          if (Math.abs(teacherDiff) < 0.1 && Math.abs(managerDiff) < 0.1) {
+            data.push({ x: p, y: s });
+          }
+        }
+      }
+      
+      // 更新均衡点显示
+      const nashPoint = data.length > 0 ? data[Math.floor(data.length/2)] : { x: 0.5, y: 0.5 };
+      document.getElementById('nash-point-1').textContent = `参与度 = ${nashPoint.x.toFixed(2)}, 监督强度 = ${nashPoint.y.toFixed(2)}`;
+      
+      return data;
+    }
+    
+    // 计算纳什均衡数据2（寻租强度 vs 学术型比例）
+    function calculateNashData2() {
+      const data = [];
+      for (let r = 0; r <= 1; r += 0.05) {
+        for (let a = 0; a <= 1; a += 0.05) {
+          // 计算合法与寻租收益差
+          const researcherPayoffs = calculateResearcherPayoff(r, systemState.participation, systemState.supervision);
+          const researcherDiff = researcherPayoffs.legalPayoff - researcherPayoffs.rentSeekingPayoff;
+          
+          // 计算学术型与行政型收益差
+          const studioPayoffs = calculateStudioPayoff(a, systemState.participation, params.resource);
+          const studioDiff = studioPayoffs.academicPayoff - studioPayoffs.adminPayoff;
+          
+          // 当两者收益差接近0时，认为是均衡点附近
+          if (Math.abs(researcherDiff) < 0.1 && Math.abs(studioDiff) < 0.1) {
+            data.push({ x: r, y: a });
+          }
+        }
+      }
+      
+      // 更新均衡点显示
+      const nashPoint = data.length > 0 ? data[Math.floor(data.length/2)] : { x: 0.5, y: 0.5 };
+      document.getElementById('nash-point-2').textContent = `寻租强度 = ${nashPoint.x.toFixed(2)}, 学术型比例 = ${nashPoint.y.toFixed(2)}`;
+      
+      return data;
+    }
+    
+    // 更新所有图表
+    function updateAllCharts() {
+      // 更新教师收益图表
+      const teacherCooperatePayoff = calculateTeacherPayoff(true, systemState.participation);
+      const teacherFreeRidePayoff = calculateTeacherPayoff(false, systemState.participation);
+      teacherChart.data.datasets[0].data = [teacherCooperatePayoff, teacherFreeRidePayoff];
+      teacherChart.update();
+      
+      // 更新管理者收益图表
+      const managerPayoffs = calculateManagerPayoff(systemState.supervision, systemState.participation);
+      managerChart.data.datasets[0].data = [managerPayoffs.effectivePayoff, managerPayoffs.formalPayoff];
+      managerChart.update();
+      
+      // 更新教研员收益图表
+      const researcherPayoffs = calculateResearcherPayoff(systemState.rentSeeking, systemState.participation, systemState.supervision);
+      researcherChart.data.datasets[0].data = [researcherPayoffs.legalPayoff, researcherPayoffs.rentSeekingPayoff];
+      researcherChart.update();
+      
+      // 更新工作室收益图表
+      const studioPayoffs = calculateStudioPayoff(systemState.academicRatio, systemState.participation, params.resource);
+      studioChart.data.datasets[0].data = [studioPayoffs.academicPayoff, studioPayoffs.adminPayoff];
+      studioChart.update();
+      
+      // 更新纳什均衡图表
+      nashChart1.data.datasets[0].data = calculateNashData1();
+      nashChart1.data.datasets[1].data = [{ x: systemState.participation, y: systemState.supervision }];
+      nashChart1.update();
+      
+      nashChart2.data.datasets[0].data = calculateNashData2();
+      nashChart2.data.datasets[1].data = [{ x: systemState.rentSeeking, y: systemState.academicRatio }];
+      nashChart2.update();
+      
+      // 更新UI显示
+      document.getElementById('teacher-cooperate-value').textContent = teacherCooperatePayoff.toFixed(2);
+      document.getElementById('teacher-free-ride-value').textContent = teacherFreeRidePayoff.toFixed(2);
+      
+      document.getElementById('manager-effective-value').textContent = managerPayoffs.effectivePayoff.toFixed(2);
+      document.getElementById('manager-formal-value').textContent = managerPayoffs.formalPayoff.toFixed(2);
+      
+      document.getElementById('researcher-legal-value').textContent = researcherPayoffs.legalPayoff.toFixed(2);
+      document.getElementById('researcher-rent-value').textContent = researcherPayoffs.rentSeekingPayoff.toFixed(2);
+      
+      document.getElementById('studio-academic-value').textContent = studioPayoffs.academicPayoff.toFixed(2);
+      document.getElementById('studio-administrative-value').textContent = studioPayoffs.adminPayoff.toFixed(2);
+    }
+    
+    // 初始化仿真数据
+    function initSimulationData() {
+      simulationData.history = [{
+        step: 0,
+        participation: systemState.participation,
+        supervision: systemState.supervision,
+        rentSeeking: systemState.rentSeeking,
+        academicRatio: systemState.academicRatio
+      }];
+      
+      updateSimulationUI();
+    }
+    
+    // 更新仿真UI
+    function updateSimulationUI() {
+      document.getElementById('current-step').textContent = simulationData.currentStep;
+      document.getElementById('total-steps').textContent = simulationData.totalSteps;
+      document.getElementById('simulation-participation').textContent = systemState.participation.toFixed(2);
+      document.getElementById('simulation-supervision').textContent = systemState.supervision.toFixed(2);
+      document.getElementById('simulation-rent-seeking').textContent = systemState.rentSeeking.toFixed(2);
+      document.getElementById('simulation-academic-ratio').textContent = systemState.academicRatio.toFixed(2);
+      
+      // 更新演化图表
+      const labels = simulationData.history.map(h => h.step);
+      const participationData = simulationData.history.map(h => h.participation);
+      const supervisionData = simulationData.history.map(h => h.supervision);
+      const rentSeekingData = simulationData.history.map(h => h.rentSeeking);
+      const academicRatioData = simulationData.history.map(h => h.academicRatio);
+      
+      evolutionChart.data.labels = labels;
+      evolutionChart.data.datasets[0].data = participationData;
+      evolutionChart.data.datasets[1].data = supervisionData;
+      evolutionChart.data.datasets[2].data = rentSeekingData;
+      evolutionChart.data.datasets[3].data = academicRatioData;
+      evolutionChart.update();
+    }
+    
+    // 执行一步仿真
+    function simulateOneStep() {
+      if (simulationData.currentStep >= simulationData.totalSteps) {
+        finishSimulation();
+        return;
+      }
+      
+      // 计算收益
+      const teacherCooperatePayoff = calculateTeacherPayoff(true, systemState.participation);
+      const teacherFreeRidePayoff = calculateTeacherPayoff(false, systemState.participation);
+      
+      const managerPayoffs = calculateManagerPayoff(systemState.supervision, systemState.participation);
+      
+      const researcherPayoffs = calculateResearcherPayoff(systemState.rentSeeking, systemState.participation, systemState.supervision);
+      
+      const studioPayoffs = calculateStudioPayoff(systemState.academicRatio, systemState.participation, params.resource);
+      
+      // 更新系统状态（简化的演化规则）
+      // 教师参与度更新
+      const teacherDiff = teacherCooperatePayoff - teacherFreeRidePayoff;
+      systemState.participation = Math.max(0, Math.min(1, systemState.participation + 0.05 * teacherDiff));
+      
+      // 监督强度更新
+      const managerDiff = managerPayoffs.effectivePayoff - managerPayoffs.formalPayoff;
+      systemState.supervision = Math.max(0, Math.min(1, systemState.supervision + 0.05 * managerDiff));
+      
+      // 寻租强度更新
+      const researcherDiff = researcherPayoffs.rentSeekingPayoff - researcherPayoffs.legalPayoff;
+      systemState.rentSeeking = Math.max(0, Math.min(1, systemState.rentSeeking + 0.05 * researcherDiff));
+      
+      // 学术型比例更新
+      const studioDiff = studioPayoffs.academicPayoff - studioPayoffs.adminPayoff;
+      systemState.academicRatio = Math.max(0, Math.min(1, systemState.academicRatio + 0.05 * studioDiff));
+      
+      // 记录历史
+      simulationData.currentStep++;
+      simulationData.history.push({
+        step: simulationData.currentStep,
+        participation: systemState.participation,
+        supervision: systemState.supervision,
+        rentSeeking: systemState.rentSeeking,
+        academicRatio: systemState.academicRatio
+      });
+      
+      // 更新UI
+      updateSimulationUI();
+      updateAllCharts();
+    }
+    
+    // 开始仿真
+    function startSimulation() {
+      if (simulationData.isRunning) return;
+      
+      simulationData.isRunning = true;
+      document.getElementById('start-simulation').innerHTML = '<i class="fa fa-play mr-2"></i>继续';
+      document.getElementById('pause-simulation').disabled = false;
+      document.getElementById('simulation-status').textContent = '运行中';
+      
+      // 设置间隔执行仿真
+      const intervalTime = 1000 / simulationData.speed;
+      simulationData.intervalId = setInterval(simulateOneStep, intervalTime);
+    }
+    
+    // 暂停仿真
+    function pauseSimulation() {
+      if (!simulationData.isRunning) return;
+      
+      simulationData.isRunning = false;
+      clearInterval(simulationData.intervalId);
+      document.getElementById('pause-simulation').disabled = true;
+      document.getElementById('simulation-status').textContent = '已暂停';
+    }
+    
+    // 重置仿真
+    function resetSimulation() {
+      pauseSimulation();
+      
+      // 重置系统状态
+      systemState.participation = 0.5;
+      systemState.supervision = 0.5;
+      systemState.rentSeeking = 0.5;
+      systemState.academicRatio = 0.5;
+      
+      // 重置仿真数据
+      simulationData.currentStep = 0;
+      simulationData.history = [{
+        step: 0,
+        participation: systemState.participation,
+        supervision: systemState.supervision,
+        rentSeeking: systemState.rentSeeking,
+        academicRatio: systemState.academicRatio
+      }];
+      
+      // 更新UI
+      document.getElementById('start-simulation').innerHTML = '<i class="fa fa-play mr-2"></i>开始仿真';
+      document.getElementById('simulation-status').textContent = '就绪';
+      updateSimulationUI();
+      updateAllCharts();
+    }
+    
+    // 完成仿真
+    function finishSimulation() {
+      pauseSimulation();
+      document.getElementById('start-simulation').innerHTML = '<i class="fa fa-refresh mr-2"></i>重新开始';
+      document.getElementById('simulation-status').textContent = '已完成';
+      updateSimulationConclusion();
+    }
+    
+    // 更新仿真结论
+    function updateSimulationConclusion() {
+      if (simulationData.history.length <= 1) {
+        document.getElementById('simulation-conclusion').textContent = '请运行仿真以查看结论。';
+        return;
+      }
+      
+      const lastState = simulationData.history[simulationData.history.length - 1];
+      const initialState = simulationData.history[0];
+      
+      let conclusion = '';
+      
+      // 分析教师参与度变化
+      const participationChange = lastState.participation - initialState.participation;
+      if (Math.abs(participationChange) > 0.1) {
+        conclusion += participationChange > 0 ? '教师参与度显著提高。' : '教师参与度显著下降。';
+      } else {
+        conclusion += '教师参与度变化不大。';
+      }
+      
+      // 分析监督强度变化
+      const supervisionChange = lastState.supervision - initialState.supervision;
+      if (Math.abs(supervisionChange) > 0.1) {
+        conclusion += supervisionChange > 0 ? '监督强度显著提高。' : '监督强度显著下降。';
+      } else {
+        conclusion += '监督强度变化不大。';
+      }
+      
+      // 分析寻租强度变化
+      const rentSeekingChange = lastState.rentSeeking - initialState.rentSeeking;
+      if (Math.abs(rentSeekingChange) > 0.1) {
+        conclusion += rentSeekingChange > 0 ? '寻租行为有所增加。' : '寻租行为得到有效抑制。';
+      } else {
+        conclusion += '寻租行为变化不大。';
+      }
+      
+      // 分析学术型比例变化
+      const academicChange = lastState.academicRatio - initialState.academicRatio;
+      if (Math.abs(academicChange) > 0.1) {
+        conclusion += academicChange > 0 ? '学术型工作室比例显著提高。' : '学术型工作室比例显著下降。';
+      } else {
+        conclusion += '学术型工作室比例变化不大。';
+      }
+      
+      // 系统稳定性评估
+      let stabilityText = '';
+      const last10States = simulationData.history.slice(-10);
+      let isStable = true;
+      
+      for (let i = 1; i < last10States.length; i++) {
+        const prev = last10States[i-1];
+        const curr = last10States[i];
+        
+        if (Math.abs(curr.participation - prev.participation) > 0.05 ||
+            Math.abs(curr.supervision - prev.supervision) > 0.05 ||
+            Math.abs(curr.rentSeeking - prev.rentSeeking) > 0.05 ||
+            Math.abs(curr.academicRatio - prev.academicRatio) > 0.05) {
+          isStable = false;
+          break;
+        }
+      }
+      
+      if (isStable) {
+        stabilityText = '系统已达到稳定状态。';
+      } else {
+        stabilityText = '系统仍在动态演化中。';
+      }
+      
+      document.getElementById('simulation-conclusion').textContent = conclusion + ' ' + stabilityText;
+    }
+    
+    // 绑定按钮事件
+    function bindButtonEvents() {
+      // 仿真控制按钮
+      document.getElementById('start-simulation').addEventListener('click', startSimulation);
+      document.getElementById('pause-simulation').addEventListener('click', pauseSimulation);
+      document.getElementById('reset-simulation').addEventListener('click', resetSimulation);
+      
+      // 重置参数按钮
+      document.getElementById('reset-parameters').addEventListener('click', function() {
+        // 重置参数
+        params.lambda = 0.6;
+        params.d0 = 0.3;
+        params.blockchain = false;
+        params.k = 0.4;
+        params.alpha = 0.6;
+        params.beta = 0.4;
+        params.a = 0.3;
+        params.b = 0.2;
+        params.rho = 0.5;
+        params.m = 1.0;
+        params.sigma = 0.5;
+        params.gamma = 0.5;
+        params.rThres = 0.6;
+        params.mu = 0.3;
+        params.resource = 1.0;
+        params.quality = 0.7;
+        
+        // 更新滑块和输入框
+        initSlidersAndInputs();
+        
+        // 更新图表
+        updateAllCharts();
+      });
+    }
+    
+    // 绑定模态框事件
+    function bindModalEvents() {
+      // 帮助模态框
+      document.getElementById('help-btn').addEventListener('click', function() {
+        document.getElementById('help-modal').classList.remove('hidden');
+      });
+      
+      document.getElementById('close-help-modal').addEventListener('click', function() {
+        document.getElementById('help-modal').classList.add('hidden');
+      });
+      
+      document.getElementById('close-help-btn').addEventListener('click', function() {
+        document.getElementById('help-modal').classList.add('hidden');
+      });
+      
+      // 关于模态框
+      document.getElementById('about-btn').addEventListener('click', function() {
+        document.getElementById('about-modal').classList.remove('hidden');
+      });
+      
+      document.getElementById('close-about-modal').addEventListener('click', function() {
+        document.getElementById('about-modal').classList.add('hidden');
+      });
+      
+      document.getElementById('close-about-btn').addEventListener('click', function() {
+        document.getElementById('about-modal').classList.add('hidden');
+      });
+      
+      // 点击模态框背景关闭
+      document.querySelectorAll('#help-modal, #about-modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            modal.classList.add('hidden');
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>
